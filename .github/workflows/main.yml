@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install buildozer==1.4.1
+        pip install buildozer==1.4.0  # Используем существующую версию 1.4.0
 
     - name: Prepare buildozer.spec
       run: |
@@ -35,7 +35,6 @@ jobs:
         echo "version = 0.1" >> buildozer.spec
         echo "requirements = python3,kivy==2.0.0,android,plyer,certifi,requests,urllib3" >> buildozer.spec
         echo "log_level = 2" >> buildozer.spec
-        # Объединяем все assets в одну строку
         echo "android.add_assets = z-f.mp4:., flags/*.png:flags/" >> buildozer.spec
         echo "" >> buildozer.spec
         echo "[buildozer]" >> buildozer.spec
