@@ -1,5 +1,4 @@
 name: Build APK
-
 on:
   push:
     branches: [main]
@@ -9,43 +8,47 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
-
-    - name: Install dependencies
+        python-version: '3.9'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          openjdk-17-jdk \
+          build-essential \
+          libssl-dev \
+          libffi-dev \
+          python3-dev \
+          git \
+          zip \
+          unzip
+    
+    - name: Install Python dependencies
       run: |
         pip install --upgrade pip
-        pip install buildozer==1.4.0  # Используем существующую версию 1.4.0
-
-    - name: Prepare buildozer.spec
+        pip install Cython==0.29.33
+        pip install buildozer==1.5.0
+    
+    - name: Create flags directory
       run: |
-        # Создаем новый buildozer.spec
-        echo "[app]" > buildozer.spec
-        echo "title = IKISKY VPN" >> buildozer.spec
-        echo "package.name = ikiskyvpn" >> buildozer.spec
-        echo "package.domain = com.ikisky" >> buildozer.spec
-        echo "source.dir = ." >> buildozer.spec
-        echo "source.include_exts = py,png,jpg,kv,mp4,json" >> buildozer.spec
-        echo "version = 0.1" >> buildozer.spec
-        echo "requirements = python3,kivy==2.0.0,android,plyer,certifi,requests,urllib3" >> buildozer.spec
-        echo "log_level = 2" >> buildozer.spec
-        echo "android.add_assets = z-f.mp4:., flags/*.png:flags/" >> buildozer.spec
-        echo "" >> buildozer.spec
-        echo "[buildozer]" >> buildozer.spec
-        echo "log_level = 2" >> buildozer.spec
-        echo "warn_on_root = 1" >> buildozer.spec
-        cat buildozer.spec
-
-    - name: Build APK
+        mkdir -p flags
+        # Если флаги есть в репозитории, переместите их
+        if ls s*.png 1> /dev/null 2>&1; then
+          mv s*.png flags/ || true
+        fi
+    
+    - name: Build APK with verbose output
       run: |
-        buildozer android debug
-
+        buildozer -v android debug
+    
     - name: Upload APK
       if: success()
       uses: actions/upload-artifact@v4
@@ -53,3 +56,11 @@ jobs:
         name: IKISKY-VPN-APK
         path: bin/*.apk
         retention-days: 7
+    
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: .buildozer/android/platform/build-*/build.log
+        retention-days: 3
