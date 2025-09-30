@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/upload-artifact@v4
+      uses: actions/setup-python@v4
       with:
         python-version: '3.8'
 
@@ -33,10 +33,13 @@ jobs:
         echo "source.dir = ." >> buildozer.spec
         echo "source.include_exts = py,png,jpg,kv,mp4,json" >> buildozer.spec
         echo "version = 0.1" >> buildozer.spec
-        echo "requirements = python3,kivy==2.0.0,android,plyer" >> buildozer.spec
+        echo "requirements = python3,kivy==2.0.0,android,plyer,certifi,requests,urllib3" >> buildozer.spec
         echo "log_level = 2" >> buildozer.spec
         echo "android.add_assets = z-f.mp4:." >> buildozer.spec
         echo "android.add_assets = flags/*.png:flags/" >> buildozer.spec
+        echo "[buildozer]" >> buildozer.spec
+        echo "log_level = 2" >> buildozer.spec
+        echo "warn_on_root = 1" >> buildozer.spec
         cat buildozer.spec
 
     - name: Build APK
@@ -45,7 +48,8 @@ jobs:
 
     - name: Upload APK
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: IKISKY-VPN-APK
         path: bin/*.apk
+        retention-days: 7
