@@ -21,11 +21,11 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install buildozer
+        pip install buildozer==1.4.1
 
     - name: Prepare buildozer.spec
       run: |
-        buildozer init
+        # Создаем новый buildozer.spec
         echo "[app]" > buildozer.spec
         echo "title = IKISKY VPN" >> buildozer.spec
         echo "package.name = ikiskyvpn" >> buildozer.spec
@@ -35,8 +35,9 @@ jobs:
         echo "version = 0.1" >> buildozer.spec
         echo "requirements = python3,kivy==2.0.0,android,plyer,certifi,requests,urllib3" >> buildozer.spec
         echo "log_level = 2" >> buildozer.spec
-        echo "android.add_assets = z-f.mp4:." >> buildozer.spec
-        echo "android.add_assets = flags/*.png:flags/" >> buildozer.spec
+        # Объединяем все assets в одну строку
+        echo "android.add_assets = z-f.mp4:., flags/*.png:flags/" >> buildozer.spec
+        echo "" >> buildozer.spec
         echo "[buildozer]" >> buildozer.spec
         echo "log_level = 2" >> buildozer.spec
         echo "warn_on_root = 1" >> buildozer.spec
