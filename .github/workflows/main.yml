@@ -18,6 +18,12 @@ jobs:
       with:
         python-version: '3.9'
     
+    - name: Cache Buildozer global directory
+      uses: actions/cache@v3
+      with:
+        path: ~/.buildozer
+        key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+    
     - name: Install system dependencies
       run: |
         sudo apt-get update
@@ -29,7 +35,17 @@ jobs:
           python3-dev \
           git \
           zip \
-          unzip
+          unzip \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
+          cmake \
+          libffi-dev \
+          libssl-dev
     
     - name: Install Python dependencies
       run: |
@@ -37,17 +53,35 @@ jobs:
         pip install Cython==0.29.33
         pip install buildozer==1.5.0
     
-    - name: Create flags directory
+    - name: Verify files exist
       run: |
-        mkdir -p flags
-        # Если флаги есть в репозитории, переместите их
-        if ls s*.png 1> /dev/null 2>&1; then
-          mv s*.png flags/ || true
+        echo "=== Checking project files ==="
+        ls -la
+        echo "=== Checking buildozer.spec ==="
+        if [ -f buildozer.spec ]; then
+          echo "✓ buildozer.spec found"
+          cat buildozer.spec
+        else
+          echo "✗ buildozer.spec NOT found!"
+          exit 1
+        fi
+        echo "=== Checking main.py ==="
+        if [ -f main.py ]; then
+          echo "✓ main.py found"
+        else
+          echo "✗ main.py NOT found!"
+          exit 1
         fi
     
-    - name: Build APK with verbose output
+    - name: Build APK
       run: |
         buildozer -v android debug
+    
+    - name: List bin directory
+      if: always()
+      run: |
+        echo "=== Contents of bin directory ==="
+        ls -lah bin/ || echo "bin/ directory not found"
     
     - name: Upload APK
       if: success()
@@ -57,10 +91,12 @@ jobs:
         path: bin/*.apk
         retention-days: 7
     
-    - name: Upload build logs on failure
+    - name: Upload build logs
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: build-logs
-        path: .buildozer/android/platform/build-*/build.log
+        path: |
+          .buildozer/android/platform/build-*/build.log
+          .buildozer/android/logs/*
         retention-days: 3
