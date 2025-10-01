@@ -103,7 +103,7 @@ jobs:
       with:
         name: build-logs
         path: |
-          .buildozer/android/platform/build-*/build.log
-          .buildozer/android/logs/*.log
+        name: build-logs-full
+        path: .buildozer/
         retention-days: 3
         if-no-files-found: warn
