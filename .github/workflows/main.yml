@@ -77,8 +77,8 @@ jobs:
     
     - name: Build APK
       run: |
-        yes | buildozer -v android debug
-      timeout-minutes: 60
+        buildozer android debug --verbose
+      timeout-minutes: 180
     
     - name: Show build results
       if: always()
