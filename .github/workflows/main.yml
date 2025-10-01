@@ -18,10 +18,12 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Cache Buildozer global directory
+    - name: Cache Buildozer
       uses: actions/cache@v3
       with:
-        path: ~/.buildozer
+        path: |
+          ~/.buildozer
+          .buildozer
         key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
     
     - name: Install system dependencies
@@ -30,9 +32,6 @@ jobs:
         sudo apt-get install -y \
           openjdk-17-jdk \
           build-essential \
-          libssl-dev \
-          libffi-dev \
-          python3-dev \
           git \
           zip \
           unzip \
@@ -42,46 +41,53 @@ jobs:
           zlib1g-dev \
           libncurses5-dev \
           libncursesw5-dev \
-          libtinfo5 \
           cmake \
           libffi-dev \
-          libssl-dev
+          libssl-dev \
+          python3-dev
     
     - name: Install Python dependencies
       run: |
         pip install --upgrade pip
+        pip install --upgrade wheel setuptools
         pip install Cython==0.29.33
         pip install buildozer==1.5.0
     
-    - name: Verify files exist
+    - name: Verify project structure
       run: |
-        echo "=== Checking project files ==="
+        echo "Current directory contents:"
         ls -la
-        echo "=== Checking buildozer.spec ==="
+        echo ""
+        echo "Checking buildozer.spec:"
         if [ -f buildozer.spec ]; then
-          echo "✓ buildozer.spec found"
-          cat buildozer.spec
+          echo "✓ Found"
+          head -20 buildozer.spec
         else
-          echo "✗ buildozer.spec NOT found!"
-          exit 1
+          echo "✗ Missing - creating default"
+          buildozer init
         fi
-        echo "=== Checking main.py ==="
+        echo ""
+        echo "Checking main.py:"
         if [ -f main.py ]; then
-          echo "✓ main.py found"
+          echo "✓ Found"
         else
-          echo "✗ main.py NOT found!"
+          echo "✗ Missing main.py!"
           exit 1
         fi
     
     - name: Build APK
       run: |
-        buildozer -v android debug
+        yes | buildozer -v android debug
+      timeout-minutes: 60
     
-    - name: List bin directory
+    - name: Show build results
       if: always()
       run: |
-        echo "=== Contents of bin directory ==="
-        ls -lah bin/ || echo "bin/ directory not found"
+        echo "Build directory contents:"
+        ls -lah bin/ 2>/dev/null || echo "No bin directory"
+        echo ""
+        echo "Buildozer directory:"
+        du -sh .buildozer 2>/dev/null || echo "No .buildozer directory"
     
     - name: Upload APK
       if: success()
@@ -91,12 +97,13 @@ jobs:
         path: bin/*.apk
         retention-days: 7
     
-    - name: Upload build logs
+    - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: build-logs
         path: |
           .buildozer/android/platform/build-*/build.log
-          .buildozer/android/logs/*
+          .buildozer/android/logs/*.log
         retention-days: 3
+        if-no-files-found: warn
